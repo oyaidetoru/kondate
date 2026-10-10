@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="theme-color" content="#2f6b4f"><title>献立おたすけ v5</title>
+<style>
+:root{--g:#2f6b4f;--p:#edf6ef;--l:#dce6de;--t:#233128;--m:#66736a}
+*{box-sizing:border-box}body{margin:0;background:#f6f8f5;color:var(--t);font:14px/1.4 -apple-system,BlinkMacSystemFont,"Yu Gothic",sans-serif}
+header{background:var(--g);color:white;padding:10px 13px}h1{margin:0;font-size:1.15rem}header p{display:none}
+main{max-width:760px;margin:auto;padding:8px}
+.card{background:white;border:1px solid var(--l);border-radius:11px;padding:10px;margin-bottom:8px}
+h2{font-size:.98rem;margin:0 0 8px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+label.field{display:block;font-weight:700;margin:7px 0 4px}
+.checks{display:flex;gap:7px;flex-wrap:wrap}.pill{border:1px solid var(--l);border-radius:25px;padding:5px 9px;display:flex;gap:5px;align-items:center}.pill input{width:16px;height:16px;accent-color:var(--g)}
+select,input[type=text]{width:100%;font:inherit;padding:7px;border:1px solid #cbd8ce;border-radius:7px;background:white}
+button{font:inherit;font-weight:700;border:0;border-radius:7px;padding:6px 8px;cursor:pointer}.primary{background:var(--g);color:white;width:100%;margin-top:9px;padding:9px}
+.secondary{background:var(--p);color:var(--g)}.danger{background:#fff0ef;color:#a23c35}.small{font-size:.78rem;padding:5px 7px}
+.tabs{display:flex;gap:5px;position:sticky;top:0;background:#f6f8f5;padding:5px 0;z-index:5;touch-action:pan-y}
+.tab{flex:1;background:#e7eee8;color:#536359;padding:9px 4px}.tab.active{background:var(--g);color:white}
+.panel{display:none}.panel.active{display:block}html,body,.panel,.tabs,button{touch-action:manipulation}.empty{text-align:left}
+.day{border:1px solid var(--l);border-radius:9px;margin:7px 0;overflow:hidden}
+.daytitle{background:var(--p);font-weight:800;padding:6px 9px}
+.meal{padding:7px 8px;border-top:1px solid var(--l)}.mealtype{font-size:.72rem;color:var(--g);font-weight:800;margin-bottom:2px}
+.dish{display:flex;align-items:center;gap:5px;padding:3px 0;min-height:32px}
+.dishname{flex:1;min-width:0;font-weight:700;cursor:pointer}.dishname:active{opacity:.7}
+.iconbtn{flex:none;padding:4px 6px;font-size:.78rem;background:#f0f4f0;color:var(--g)}.star{font-size:1rem;padding:2px 4px;background:transparent}
+.recipe{background:#f8faf7;padding:8px;border-radius:7px;margin:4px 0 7px;font-size:.82rem}.recipe ul,.recipe ol{margin:4px 0;padding-left:20px}.recipe li{margin:2px 0}
+.muted{font-size:.77rem;color:var(--m)}.item{display:flex;gap:8px;padding:6px 2px;border-bottom:1px solid #edf1ed;align-items:center}.item input{width:18px;height:18px;accent-color:var(--g)}.item span:first-of-type{flex:1}.item.done span:first-of-type{text-decoration:line-through;color:#89938c}.amt{font-weight:700;white-space:nowrap}
+.fav{border:1px solid var(--l);border-radius:8px;padding:8px;margin:6px 0}.head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.empty{padding:12px;text-align:center;color:var(--m)}.notice{display:none}
+@media(max-width:480px){main{padding:6px}.card{padding:8px}.grid{gap:6px}.dish{gap:3px}.iconbtn{font-size:.72rem;padding:4px}.day{margin:5px 0}}
+@media print{header,#setup,.tabs,.no-print{display:none!important}.panel{display:block!important}body{background:white}.card{border:0}}
+.actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.daytitle{text-align:left}.meal,.dish,.dishname{text-align:left}
+</style></head><body>
+<header><h1>🍳 献立おたすけ</h1><p>主菜・副菜・汁物を組み合わせて、買い物リストまで自動作成</p></header>
+<main>
+<section class="card" id="setup"><h2>① 献立の条件</h2><div class="grid"><div><label class="field">何日分？</label><select id="days"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option selected>7</option><option>14</option></select></div><div><label class="field">何人分？</label><select id="people"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option></select></div></div>
+<label class="field">作りたい食事</label><div class="checks"><label class="pill"><input type="checkbox" id="lunch">昼ごはん</label><label class="pill"><input type="checkbox" id="dinner" checked>夜ごはん</label></div>
+<div class="grid"><div><label class="field">献立の傾向</label><select id="style"><option value="all">おまかせ</option><option value="japanese">和食多め</option><option value="western">洋食多め</option><option value="chinese">中華多め</option><option value="quick">時短多め</option></select></div><div><label class="field">食材の使い回し</label><select id="reuse"><option value="high">多め・食材の種類を抑える</option><option value="mid">ほどほど</option><option value="low">料理のバリエーション優先</option></select></div></div>
+<label class="field">使いたくない食材（「、」区切り）</label><input id="exclude" type="text" placeholder="例：きのこ、豚肉">
+<button class="primary" onclick="generate()">🎲 献立を作る</button></section>
+
+<nav class="tabs no-print">
+<button class="tab active" onclick="showTab('menuPanel',this)">献立</button>
+<button class="tab" onclick="showTab('shopPanel',this)">買い物リスト</button>
+<button class="tab" onclick="showTab('favPanel',this)">お気に入り</button>
+</nav>
+<section id="menuPanel" class="panel active">
+<div class="card"><div class="head"><h2>献立</h2><button class="secondary small no-print" onclick="generate()">考え直す</button></div><div id="menu" class="empty">条件を選んで献立を作成</div></div>
+</section>
+<section id="shopPanel" class="panel">
+<div class="card"><div class="head"><h2>買い物リスト</h2><button class="secondary small no-print" onclick="document.querySelectorAll('.item input').forEach(x=>{x.checked=false;x.parentElement.classList.remove('done')})">解除</button></div><div id="shopping" class="empty">献立を作ると表示</div><div class="actions no-print"><button class="secondary" onclick="copyList()">リストをコピー</button></div><div id="status" class="muted"></div></div>
+</section>
+<section id="favPanel" class="panel">
+<div class="card"><div class="head"><h2>お気に入り</h2><span id="count" class="muted">0件</span></div><div id="favorites"><div class="empty">まだありません</div></div></div>
+</section>
+
+</main>
+<script>
+const R=(name,type,ing,steps,quick=true)=>({name,type,ing,steps,quick});
+const mains=[
+R('鶏もも肉の照り焼き','japanese',[['鶏もも肉',600,'g'],['しょうゆ',2,'大さじ'],['みりん',2,'大さじ'],['砂糖',1,'大さじ']],['鶏肉の余分な脂を取り、一口大に切る。','皮目から焼き、裏返して中まで火を通す。','しょうゆ・みりん・砂糖を加えて照りが出るまで煮からめる。']),
+R('豚肉と玉ねぎの甘辛炒め','japanese',[['豚こま肉',400,'g'],['玉ねぎ',2,'個'],['しょうゆ',2,'大さじ'],['みりん',2,'大さじ']],['玉ねぎを薄切りにする。','豚肉を炒め、玉ねぎを加えてしんなりするまで炒める。','しょうゆとみりんで味を調える。']),
+R('鮭のホイル焼き','japanese',[['生鮭',4,'切れ'],['玉ねぎ',1,'個'],['しめじ',100,'g'],['バター',20,'g']],['玉ねぎを薄切りにし、しめじをほぐす。','ホイルに鮭・野菜・バターをのせて包む。','フライパンに少量の水を入れ、ふたをして蒸し焼きにする。']),
+R('肉じゃが','japanese',[['牛こま肉',300,'g'],['じゃがいも',600,'g'],['にんじん',150,'g'],['玉ねぎ',2,'個'],['しらたき',200,'g'],['しょうゆ',3,'大さじ']],['野菜を食べやすい大きさに切る。','牛肉と野菜を軽く炒め、水と調味料を加える。','しらたきを加え、具材が柔らかくなるまで煮る。'],false),
+R('豚肉と白菜のうま煮','japanese',[['豚こま肉',350,'g'],['白菜',500,'g'],['にんじん',100,'g'],['しょうゆ',2,'大さじ'],['鶏ガラスープの素',2,'小さじ']],['白菜とにんじんを切る。','豚肉を炒め、野菜・水・鶏ガラスープの素を加えて煮る。','しょうゆで味を調える。']),
+R('親子丼','japanese',[['鶏もも肉',400,'g'],['卵',4,'個'],['玉ねぎ',1,'個'],['めんつゆ',4,'大さじ'],['ごはん',800,'g']],['鶏肉と玉ねぎを切る。','めんつゆと水で鶏肉・玉ねぎに火を通す。','溶き卵を回し入れて、ごはんにのせる。']),
+R('さばの味噌煮','japanese',[['さば',4,'切れ'],['しょうが',20,'g'],['味噌',2,'大さじ'],['砂糖',2,'大さじ']],['しょうがを薄切りにする。','水・味噌・砂糖・しょうがを煮立てる。','さばを入れ、落としぶたをして煮る。']),
+R('豆腐ハンバーグ','japanese',[['合いびき肉',400,'g'],['木綿豆腐',300,'g'],['玉ねぎ',1,'個'],['卵',1,'個'],['パン粉',30,'g']],['豆腐を水切りし、玉ねぎをみじん切りにする。','材料を混ぜて小判形に整える。','両面を焼き、ふたをして中まで火を通す。'],false),
+R('カレーライス','japanese',[['豚こま肉',400,'g'],['じゃがいも',500,'g'],['にんじん',150,'g'],['玉ねぎ',2,'個'],['カレールウ',100,'g'],['ごはん',800,'g']],['肉と野菜を切って炒め、水を加えて煮る。','具材が柔らかくなったら火を止めてルウを溶かす。','弱火で少し煮てごはんにかける。'],false),
+R('チキンソテー','western',[['鶏もも肉',600,'g'],['ブロッコリー',250,'g'],['にんにく',5,'g'],['塩',1,'小さじ']],['鶏肉の水気を拭いて塩を振る。','皮目から焼き、裏返してふたをし火を通す。','ブロッコリーを添え、刻んだにんにくで香りを付ける。']),
+R('ミートソースパスタ','western',[['合いびき肉',350,'g'],['玉ねぎ',1,'個'],['にんじん',100,'g'],['トマト缶',400,'g'],['パスタ',400,'g']],['玉ねぎとにんじんをみじん切りにする。','ひき肉と野菜を炒め、トマト缶を加えて煮込む。','ゆでたパスタにソースをかける。'],false),
+R('ポークチャップ','western',[['豚ロース肉',600,'g'],['玉ねぎ',1,'個'],['ケチャップ',3,'大さじ'],['ウスターソース',1,'大さじ']],['玉ねぎを薄切りにする。','豚肉と玉ねぎを焼く。','ケチャップとソースを加えてからめる。']),
+R('クリームシチュー','western',[['鶏もも肉',400,'g'],['じゃがいも',400,'g'],['にんじん',150,'g'],['玉ねぎ',2,'個'],['牛乳',400,'ml'],['シチュールウ',90,'g']],['肉と野菜を切って炒め、水を加えて煮る。','具材が柔らかくなったらルウを溶かす。','牛乳を加えて温める。'],false),
+R('オムライス','western',[['卵',6,'個'],['鶏もも肉',300,'g'],['玉ねぎ',1,'個'],['ごはん',800,'g'],['ケチャップ',4,'大さじ']],['鶏肉と玉ねぎを小さく切って炒める。','ごはんとケチャップを加えて炒める。','卵を焼いてチキンライスにのせる。']),
+R('タラのムニエル','western',[['タラ',4,'切れ'],['小麦粉',2,'大さじ'],['バター',20,'g'],['レモン',1,'個'],['ブロッコリー',250,'g']],['タラの水気を拭いて小麦粉を薄くまぶす。','バターを溶かしたフライパンで両面を焼く。','レモンとブロッコリーを添える。']),
+R('麻婆豆腐','chinese',[['豚ひき肉',300,'g'],['木綿豆腐',600,'g'],['長ねぎ',100,'g'],['麻婆豆腐の素',1,'箱']],['豆腐を角切り、長ねぎをみじん切りにする。','ひき肉と長ねぎを炒める。','豆腐と麻婆豆腐の素を加えて煮る。']),
+R('鶏肉とピーマンの炒め物','chinese',[['鶏もも肉',400,'g'],['ピーマン',4,'個'],['パプリカ',1,'個'],['焼肉のたれ',3,'大さじ']],['鶏肉と野菜を細めに切る。','鶏肉に火を通して野菜を加える。','焼肉のたれで味付けする。']),
+R('回鍋肉','chinese',[['豚こま肉',350,'g'],['キャベツ',500,'g'],['ピーマン',3,'個'],['回鍋肉の素',1,'箱']],['豚肉と野菜を切る。','豚肉を炒め、野菜を加えて強火で炒める。','回鍋肉の素を加えてからめる。']),
+R('焼きそば','chinese',[['焼きそば麺',4,'玉'],['豚こま肉',300,'g'],['キャベツ',300,'g'],['にんじん',100,'g'],['焼きそばソース',4,'大さじ']],['肉と野菜を切る。','豚肉と野菜を炒め、麺を加えてほぐす。','ソースを加えて炒め合わせる。']),
+R('そぼろ丼','japanese',[['鶏ひき肉',400,'g'],['卵',4,'個'],['ごはん',800,'g'],['しょうゆ',2,'大さじ'],['砂糖',1,'大さじ']],['鶏ひき肉を炒め、しょうゆと砂糖で味付けする。','卵を炒り卵にする。','ごはんにそぼろと炒り卵を盛る。']),
+R('鶏肉ときのこのバターしょうゆ炒め','japanese',[['鶏もも肉',400,'g'],['しめじ',200,'g'],['玉ねぎ',1,'個'],['バター',15,'g'],['しょうゆ',1,'大さじ']],['鶏肉と野菜を食べやすく切る。','鶏肉を炒めて火を通し、野菜を加える。','バターとしょうゆで味付けする。']),
+R('豚バラ大根','japanese',[['豚バラ肉',350,'g'],['大根',500,'g'],['しょうゆ',3,'大さじ'],['みりん',2,'大さじ'],['砂糖',1,'大さじ']],['大根をいちょう切りにする。','豚肉を炒め、大根と水を加えて煮る。','調味料を加えて大根が柔らかくなるまで煮る。'],false),
+R('鶏つくねの照り焼き','japanese',[['鶏ひき肉',500,'g'],['長ねぎ',100,'g'],['卵',1,'個'],['パン粉',30,'g'],['しょうゆ',2,'大さじ'],['みりん',2,'大さじ']],['長ねぎを刻み、ひき肉・卵・パン粉と混ぜる。','小判形にして両面を焼き、中まで火を通す。','しょうゆとみりんを加えてからめる。']),
+R('豚肉の生姜焼き','japanese',[['豚ロース肉',500,'g'],['玉ねぎ',1,'個'],['しょうが',20,'g'],['しょうゆ',2,'大さじ'],['みりん',2,'大さじ']],['しょうがをすりおろし、調味料と混ぜる。','豚肉と玉ねぎを焼く。','合わせ調味料を加えて煮からめる。']),
+R('ぶりの照り焼き','japanese',[['ぶり',4,'切れ'],['しょうゆ',2,'大さじ'],['みりん',2,'大さじ'],['砂糖',1,'大さじ']],['ぶりの水気を拭く。','フライパンで両面を焼き、中まで火を通す。','調味料を加えて照りが出るまでからめる。']),
+R('鶏肉とれんこんの甘酢炒め','japanese',[['鶏もも肉',400,'g'],['れんこん',300,'g'],['しょうゆ',2,'大さじ'],['酢',2,'大さじ'],['砂糖',1,'大さじ']],['鶏肉とれんこんを食べやすく切る。','鶏肉を炒め、れんこんを加えて火を通す。','しょうゆ・酢・砂糖を加えて炒め合わせる。']),
+R('厚揚げと豚肉の味噌炒め','japanese',[['豚こま肉',300,'g'],['厚揚げ',300,'g'],['キャベツ',250,'g'],['味噌',2,'大さじ'],['みりん',1,'大さじ']],['厚揚げとキャベツを切る。','豚肉を炒め、厚揚げとキャベツを加える。','味噌とみりんを混ぜて加え、炒め合わせる。']),
+R('鶏肉のねぎ塩焼き','japanese',[['鶏もも肉',600,'g'],['長ねぎ',100,'g'],['ごま油',1,'大さじ'],['レモン汁',1,'大さじ'],['塩',1,'小さじ']],['長ねぎをみじん切りにし、調味料と混ぜる。','鶏肉を皮目から焼いて中まで火を通す。','ねぎ塩だれをかける。']),
+R('鮭とじゃがいもの味噌バター焼き','japanese',[['生鮭',4,'切れ'],['じゃがいも',400,'g'],['玉ねぎ',1,'個'],['味噌',2,'大さじ'],['バター',20,'g']],['じゃがいもを薄切りにしてレンジで加熱する。','鮭と玉ねぎを焼き、じゃがいもを加える。','味噌を少量の水で溶いて加え、バターをのせる。']),
+R('牛肉とピーマンのオイスター炒め','chinese',[['牛こま肉',400,'g'],['ピーマン',4,'個'],['玉ねぎ',1,'個'],['オイスターソース',2,'大さじ'],['しょうゆ',1,'大さじ']],['牛肉と野菜を細切りにする。','牛肉を炒め、野菜を加える。','オイスターソースとしょうゆで味付けする。']),
+R('豚キムチ炒め','chinese',[['豚こま肉',400,'g'],['白菜キムチ',250,'g'],['玉ねぎ',1,'個'],['ごま油',1,'大さじ']],['玉ねぎを薄切りにする。','ごま油で豚肉と玉ねぎを炒める。','キムチを加えて全体を炒め合わせる。']),
+R('鶏肉と卵の中華炒め','chinese',[['鶏もも肉',350,'g'],['卵',4,'個'],['長ねぎ',80,'g'],['鶏ガラスープの素',1,'小さじ'],['しょうゆ',1,'大さじ']],['鶏肉と長ねぎを切る。','鶏肉を炒めて火を通し、溶き卵を加える。','鶏ガラスープの素としょうゆで味付けする。']),
+R('豚肉と春雨の炒め煮','chinese',[['豚ひき肉',300,'g'],['春雨',100,'g'],['にんじん',100,'g'],['長ねぎ',50,'g'],['鶏ガラスープの素',2,'小さじ'],['しょうゆ',2,'大さじ']],['春雨を戻し、野菜を細切りにする。','ひき肉と野菜を炒める。','春雨と調味料、水を加えて汁気が少なくなるまで煮る。']),
+R('ハンバーグ','western',[['合いびき肉',600,'g'],['玉ねぎ',1,'個'],['卵',1,'個'],['パン粉',40,'g'],['牛乳',50,'ml']],['玉ねぎをみじん切りにして炒め、冷ます。','材料を混ぜて成形する。','両面を焼き、ふたをして中まで火を通す。'],false),
+R('鶏肉のトマト煮','western',[['鶏もも肉',500,'g'],['カットトマト缶',400,'g'],['玉ねぎ',1,'個'],['しめじ',150,'g'],['コンソメ',2,'個']],['鶏肉と野菜を切る。','鶏肉を焼き、玉ねぎとしめじを加える。','トマト缶とコンソメを加えて煮込む。']),
+R('鮭のクリーム煮','western',[['生鮭',4,'切れ'],['牛乳',400,'ml'],['玉ねぎ',1,'個'],['ブロッコリー',200,'g'],['小麦粉',2,'大さじ'],['バター',20,'g']],['鮭に小麦粉を薄くまぶす。','バターで鮭と玉ねぎを焼く。','牛乳とブロッコリーを加え、とろみがつくまで煮る。']),
+R('豚肉とキャベツのガーリック炒め','western',[['豚こま肉',400,'g'],['キャベツ',400,'g'],['にんにく',5,'g'],['オリーブ油',1,'大さじ']],['豚肉とキャベツを切り、にんにくを刻む。','油とにんにくを熱し、豚肉を炒める。','キャベツを加えてしんなりするまで炒め、塩こしょうで調える。']),
+R('タンドリーチキン風','western',[['鶏もも肉',600,'g'],['プレーンヨーグルト',100,'g'],['ケチャップ',2,'大さじ'],['カレー粉',2,'小さじ']],['鶏肉を食べやすく切る。','ヨーグルト・ケチャップ・カレー粉を混ぜて鶏肉を漬ける。','フライパンでふたをして焼き、中まで火を通す。']),
+R('豚肉ときのこの和風パスタ','western',[['豚こま肉',250,'g'],['パスタ',400,'g'],['しめじ',200,'g'],['玉ねぎ',1,'個'],['めんつゆ',3,'大さじ']],['パスタをゆでる。','豚肉・玉ねぎ・しめじを炒める。','パスタとめんつゆを加えて混ぜる。'],false),
+R('ドライカレー','western',[['合いびき肉',400,'g'],['玉ねぎ',1,'個'],['にんじん',100,'g'],['ピーマン',3,'個'],['カレールウ',60,'g'],['ごはん',800,'g']],['野菜をみじん切りにする。','ひき肉と野菜を炒める。','水少量と刻んだルウを加えて煮詰め、ごはんに添える。']),
+R('鶏肉の照りマヨ焼き','japanese',[['鶏もも肉',600,'g'],['しょうゆ',2,'大さじ'],['みりん',2,'大さじ'],['マヨネーズ',2,'大さじ']],['鶏肉を食べやすく切る。','フライパンで鶏肉を焼き、中まで火を通す。','しょうゆとみりんをからめ、仕上げにマヨネーズを添える。'])
+];
+const sides=[
+R('キャベツの塩昆布あえ','japanese',[['キャベツ',250,'g'],['塩昆布',10,'g'],['ごま油',1,'小さじ']],['キャベツをざく切りにする。','塩昆布とごま油であえて少し置く。']),
+R('きゅうりとトマトのサラダ','western',[['きゅうり',2,'本'],['トマト',2,'個'],['ドレッシング',3,'大さじ']],['野菜を食べやすく切る。','ドレッシングであえる。']),
+R('ほうれん草のおひたし','japanese',[['ほうれん草',200,'g'],['めんつゆ',2,'大さじ']],['ほうれん草をゆでて冷水に取り、水気を絞る。','食べやすく切り、めんつゆであえる。']),
+R('にんじんしりしり','japanese',[['にんじん',200,'g'],['卵',2,'個']],['にんじんを細切りにする。','炒めてしんなりしたら溶き卵を加える。']),
+R('ブロッコリーのおかかあえ','japanese',[['ブロッコリー',250,'g'],['かつお節',5,'g'],['しょうゆ',1,'大さじ']],['ブロッコリーを小房に分けてゆでる。','水気を切り、かつお節としょうゆであえる。']),
+R('冷ややっこ','japanese',[['絹ごし豆腐',300,'g'],['長ねぎ',30,'g']],['豆腐を器に盛る。','刻んだ長ねぎをのせ、しょうゆをかける。']),
+R('じゃがいものバター炒め','western',[['じゃがいも',400,'g'],['バター',15,'g']],['じゃがいもを薄切りにしてレンジで柔らかくする。','バターで炒め、塩こしょうで調える。']),
+R('もやしのナムル','chinese',[['もやし',200,'g'],['ごま油',1,'大さじ'],['しょうゆ',1,'小さじ']],['もやしをさっとゆで、水気を切る。','ごま油としょうゆであえる。']),
+R('きのこのバター炒め','western',[['しめじ',200,'g'],['バター',15,'g']],['しめじをほぐす。','バターで炒め、塩こしょうで調える。']),
+R('小松菜と油揚げの煮びたし','japanese',[['小松菜',200,'g'],['油揚げ',1,'枚'],['めんつゆ',2,'大さじ']],['小松菜と油揚げを切る。','水とめんつゆで数分煮る。']),
+R('大根のツナサラダ','japanese',[['大根',300,'g'],['ツナ缶',1,'缶'],['マヨネーズ',2,'大さじ']],['大根を細切りにして水気を切る。','ツナとマヨネーズであえる。']),
+R('小松菜と卵の炒め物','japanese',[['小松菜',250,'g'],['卵',3,'個'],['しょうゆ',1,'大さじ']],['小松菜を食べやすく切る。','卵を炒めて一度取り出す。','小松菜を炒め、卵を戻してしょうゆで調える。']),
+R('かぼちゃの煮物','japanese',[['かぼちゃ',400,'g'],['しょうゆ',1,'大さじ'],['みりん',1,'大さじ'],['砂糖',1,'大さじ']],['かぼちゃを一口大に切る。','鍋に皮を下にして並べ、水と調味料を加える。','ふたをして柔らかくなるまで煮る。']),
+R('ブロッコリーと卵のサラダ','western',[['ブロッコリー',250,'g'],['卵',3,'個'],['マヨネーズ',2,'大さじ']],['ブロッコリーをゆでる。','ゆで卵を粗くつぶす。','マヨネーズであえる。']),
+R('トマトと玉ねぎのマリネ','western',[['トマト',2,'個'],['玉ねぎ',0.5,'個'],['酢',2,'大さじ'],['オリーブ油',1,'大さじ']],['トマトを切り、玉ねぎを薄切りにする。','酢とオリーブ油を混ぜる。','野菜とあえて冷蔵庫で少し置く。']),
+R('ピーマンのおかか炒め','japanese',[['ピーマン',5,'個'],['かつお節',5,'g'],['しょうゆ',1,'大さじ']],['ピーマンを細切りにする。','フライパンで炒めてしんなりさせる。','しょうゆとかつお節を加える。']),
+R('きゅうりの塩だれ','chinese',[['きゅうり',3,'本'],['ごま油',1,'大さじ'],['鶏ガラスープの素',1,'小さじ']],['きゅうりをたたいて食べやすく割る。','ごま油と鶏ガラスープの素を混ぜる。','きゅうりとあえてなじませる。']),
+R('豆苗ともやしのナムル','chinese',[['豆苗',1,'パック'],['もやし',200,'g'],['ごま油',1,'大さじ'],['しょうゆ',1,'小さじ']],['豆苗を切り、もやしとさっとゆでる。','水気をよく切る。','ごま油としょうゆであえる。'])
+];
+const soups=[
+R('豆腐とわかめの味噌汁','japanese',[['木綿豆腐',150,'g'],['乾燥わかめ',3,'g'],['味噌',2,'大さじ']],['豆腐をさいの目に切る。','だし汁を温め、豆腐とわかめを加える。','火を弱めて味噌を溶く。']),
+R('玉ねぎと卵のスープ','western',[['玉ねぎ',1,'個'],['卵',2,'個'],['コンソメ',2,'個']],['玉ねぎを薄切りにしてコンソメスープで煮る。','溶き卵を流し入れ、ふんわり固める。']),
+R('キャベツとにんじんの味噌汁','japanese',[['キャベツ',150,'g'],['にんじん',80,'g'],['味噌',2,'大さじ']],['野菜を切る。','だし汁で野菜を煮て味噌を溶く。']),
+R('わかめと長ねぎの中華スープ','chinese',[['乾燥わかめ',3,'g'],['長ねぎ',50,'g'],['鶏ガラスープの素',2,'小さじ']],['長ねぎを斜め切りにする。','スープを煮立て、わかめとねぎを加える。']),
+R('じゃがいもの味噌汁','japanese',[['じゃがいも',250,'g'],['玉ねぎ',0.5,'個'],['味噌',2,'大さじ']],['じゃがいもと玉ねぎを切る。','だし汁で柔らかく煮て味噌を溶く。']),
+R('きのこのコンソメスープ','western',[['しめじ',100,'g'],['玉ねぎ',0.5,'個'],['コンソメ',2,'個']],['野菜としめじを切る。','水とコンソメで具材が柔らかくなるまで煮る。']),
+R('大根と油揚げの味噌汁','japanese',[['大根',200,'g'],['油揚げ',1,'枚'],['味噌',2,'大さじ']],['大根と油揚げを薄切りにする。','だし汁で煮て味噌を溶く。']),
+R('豚汁','japanese',[['豚こま肉',150,'g'],['大根',150,'g'],['にんじん',80,'g'],['ごぼう',80,'g'],['味噌',2,'大さじ']],['野菜と豚肉を食べやすく切る。','豚肉と野菜を炒め、水を加えて煮る。','具材が柔らかくなったら味噌を溶く。']),
+R('卵とコーンの中華スープ','chinese',[['卵',2,'個'],['コーン',100,'g'],['鶏ガラスープの素',2,'小さじ']],['水と鶏ガラスープの素を煮立てる。','コーンを加えて煮る。','溶き卵を流し入れる。']),
+R('トマトと卵のスープ','western',[['トマト',2,'個'],['卵',2,'個'],['コンソメ',2,'個']],['トマトをざく切りにする。','水とコンソメでトマトを煮る。','溶き卵を回し入れる。']),
+R('白菜と春雨のスープ','chinese',[['白菜',200,'g'],['春雨',50,'g'],['鶏ガラスープの素',2,'小さじ']],['白菜を食べやすく切る。','水と鶏ガラスープの素で白菜を煮る。','春雨を加えて柔らかくなるまで煮る。']),
+R('かぼちゃのポタージュ風スープ','western',[['かぼちゃ',300,'g'],['玉ねぎ',0.5,'個'],['牛乳',300,'ml'],['コンソメ',1,'個']],['かぼちゃと玉ねぎを薄切りにし、柔らかく煮る。','かぼちゃをつぶす。','牛乳とコンソメを加えて温める。'])
+];
+const lunches=[
+R('ツナと野菜のサンドイッチ','western',[['食パン',8,'枚'],['ツナ缶',2,'缶'],['レタス',100,'g'],['きゅうり',1,'本'],['マヨネーズ',2,'大さじ']],['ツナの油を切りマヨネーズと混ぜる。','野菜を切り、パンにはさんで食べやすく切る。']),
+R('豚しゃぶサラダ丼','japanese',[['豚しゃぶ肉',400,'g'],['レタス',100,'g'],['トマト',2,'個'],['ごはん',800,'g'],['ごまドレッシング',4,'大さじ']],['豚肉をゆでて冷ます。','野菜を切り、ごはんに豚肉と野菜をのせる。','ドレッシングをかける。']),
+R('簡単チキンカレーうどん','japanese',[['冷凍うどん',4,'玉'],['鶏もも肉',300,'g'],['玉ねぎ',1,'個'],['カレールウ',40,'g'],['めんつゆ',3,'大さじ']],['鶏肉と玉ねぎを切る。','水とめんつゆで具材を煮てルウを溶かす。','うどんを加えて温める。']),
+R('鮭チャーハン','chinese',[['塩鮭',2,'切れ'],['ごはん',800,'g'],['卵',3,'個'],['長ねぎ',100,'g']],['鮭を焼いて骨を取り、身をほぐす。','卵、ごはん、ねぎを炒め、鮭を加える。']),
+R('厚揚げと野菜の焼きうどん','japanese',[['冷凍うどん',4,'玉'],['厚揚げ',200,'g'],['キャベツ',250,'g'],['にんじん',100,'g'],['しょうゆ',2,'大さじ']],['野菜と厚揚げを切る。','具材を炒め、うどんを加える。','しょうゆで味を調える。']),
+R('鶏そぼろ丼','japanese',[['鶏ひき肉',400,'g'],['卵',4,'個'],['ごはん',800,'g'],['しょうゆ',2,'大さじ'],['砂糖',1,'大さじ']],['鶏ひき肉を炒めて調味料で味付けする。','卵を炒り卵にする。','ごはんに鶏そぼろと卵をのせる。']),
+R('ベーコンときのこの和風うどん','japanese',[['冷凍うどん',4,'玉'],['ベーコン',150,'g'],['しめじ',150,'g'],['めんつゆ',3,'大さじ']],['うどんを温める。','ベーコンとしめじを炒める。','うどんとめんつゆを加えて混ぜる。']),
+R('簡単タコライス','western',[['合いびき肉',350,'g'],['ごはん',800,'g'],['レタス',100,'g'],['トマト',2,'個'],['ケチャップ',2,'大さじ']],['ひき肉を炒めてケチャップと塩こしょうで味付けする。','レタスとトマトを切る。','ごはんにひき肉と野菜をのせる。']),
+R('卵と野菜のチャーハン','chinese',[['ごはん',800,'g'],['卵',4,'個'],['長ねぎ',100,'g'],['にんじん',80,'g'],['鶏ガラスープの素',1,'小さじ']],['野菜を細かく切る。','卵と野菜を炒め、ごはんを加える。','鶏ガラスープの素と塩こしょうで味付けする。']),
+R('ツナトマトパスタ','western',[['パスタ',400,'g'],['ツナ缶',2,'缶'],['カットトマト缶',400,'g'],['玉ねぎ',1,'個']],['パスタをゆでる。','玉ねぎを炒め、ツナとトマト缶を加えて煮る。','パスタとソースをあえる。'],false),
+R('豚肉と卵の甘辛丼','japanese',[['豚こま肉',350,'g'],['卵',4,'個'],['玉ねぎ',1,'個'],['ごはん',800,'g'],['しょうゆ',2,'大さじ'],['みりん',2,'大さじ']],['豚肉と玉ねぎを炒める。','しょうゆ・みりん・水を加えて煮る。','溶き卵を加えて火を通し、ごはんにのせる.'])
+];
+const all=[...mains,...sides,...soups,...lunches];let meals=[];let favs=JSON.parse(localStorage.getItem('kondateFavsV2')||'[]');
+function norm(n){return n==='トマト缶'?'カットトマト缶':n}
+function excluded(r,ex){return r.ing.some(i=>ex.some(e=>i[0].includes(e)))}
+function choose(pool,used){let a=pool.filter(x=>!used.has(x.name));return (a.length?a:pool)[Math.floor(Math.random()*(a.length?a:pool).length)]}
+function generate(){blockedNames.clear();let days=+document.getElementById('days').value,lunch=document.getElementById('lunch').checked,dinner=document.getElementById('dinner').checked;if(!lunch&&!dinner){alert('昼か夜を選んでね');return}
+let style=document.getElementById('style').value,ex=document.getElementById('exclude').value.split(/[、,，]/).map(x=>x.trim()).filter(Boolean);
+const styleMatch=r=>(style==='all'||(style==='quick'&&r.quick)||r.type===style);
+const ok=r=>!excluded(r,ex);
+let mainPool=mains.filter(ok),lunchPool=lunches.filter(ok),sidePool=sides.filter(ok),soupPool=soups.filter(ok);
+if(style!=='all'){mainPool.sort((a,b)=>Number(styleMatch(b))-Number(styleMatch(a)));lunchPool.sort((a,b)=>Number(styleMatch(b))-Number(styleMatch(a)));}
+if((dinner&&!mainPool.length)||(lunch&&!lunchPool.length)){alert('条件に合う料理がないよ');return}
+meals=[];let usedMain=new Set(),usedLunch=new Set(),usedSide=new Map(),usedSoup=new Set();
+function uniquePick(pool,used){let available=pool.filter(x=>!used.has(x.name)&&!blockedNames.has(x.name));if(!available.length)available=pool.filter(x=>!used.has(x.name));if(!available.length)available=pool;let styled=available.filter(styleMatch);if(styled.length)available=styled;let r=available[Math.floor(Math.random()*available.length)];used.add(r.name);return r}
+for(let d=1;d<=days;d++){for(let type of ['lunch','dinner']){if(type==='lunch'&&!lunch||type==='dinner'&&!dinner)continue;let r=uniquePick(type==='lunch'?lunchPool:mainPool,type==='lunch'?usedLunch:usedMain);let parts=[r];if(type==='dinner'){let availSide=sidePool.filter(x=>(usedSide.get(x.name)||0)<2&&!blockedNames.has(x.name));if(!availSide.length)availSide=sidePool.filter(x=>(usedSide.get(x.name)||0)<2);let side=availSide[Math.floor(Math.random()*availSide.length)];parts.push(side);usedSide.set(side.name,(usedSide.get(side.name)||0)+1);parts.push(uniquePick(soupPool,usedSoup));}meals.push({day:d,type,parts})}}
+renderMenu();renderShopping();showTab('menuPanel',document.querySelector('.tab'))}
+function amount(q,u){q=Math.round(q*10)/10;return (u==='大さじ'||u==='小さじ'||u==='カップ')?u+q:q+u}
+
+let blockedNames=new Set();
+function openKurashiru(name){
+ // iOSのホーム画面追加(PWA)で window.open が空白タブを作る問題を避けるため同じタブで開く。
+ // 献立データを保存し、ブラウザの戻る操作で戻ってきた際に復元する。
+ try{sessionStorage.setItem('kondateSavedMeals',JSON.stringify(meals));sessionStorage.setItem('kondateReturnToMenu','1');sessionStorage.setItem('kondateActiveTab','menuPanel')}catch(e){}
+ showTab('menuPanel',document.querySelector('.tabs .tab'));
+ window.location.href='https://www.kurashiru.com/search?query='+encodeURIComponent(name);
+}
+function restoreSavedMeals(){try{const saved=sessionStorage.getItem('kondateSavedMeals');if(saved){meals=JSON.parse(saved);renderMenu();renderShopping()} }catch(e){} }
+function showTab(id,btn){document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));let target=btn||document.querySelector('.tab[onclick*="'+id+'"]');if(target)target.classList.add('active');localStorage.setItem('kondateActiveTab',id)}
+function restoreMenuAfterExternal(){if(sessionStorage.getItem('kondateReturnToMenu')==='1'){restoreSavedMeals();showTab('menuPanel',document.querySelector('.tabs .tab'));sessionStorage.removeItem('kondateReturnToMenu')}}
+window.addEventListener('pageshow',restoreMenuAfterExternal);window.addEventListener('focus',restoreMenuAfterExternal);document.addEventListener('visibilitychange',()=>{if(!document.hidden)restoreMenuAfterExternal()});
+let swipeStartX=0,swipeStartY=0;
+document.querySelector('main').addEventListener('touchstart',e=>{if(e.touches.length===1){swipeStartX=e.touches[0].clientX;swipeStartY=e.touches[0].clientY}},{passive:true});
+document.querySelector('main').addEventListener('touchend',e=>{if(!swipeStartX)return;let dx=e.changedTouches[0].clientX-swipeStartX,dy=e.changedTouches[0].clientY-swipeStartY;swipeStartX=0;swipeStartY=0;if(Math.abs(dx)<65||Math.abs(dx)<Math.abs(dy)*1.25)return;let ids=['menuPanel','shopPanel','favPanel'],active=document.querySelector('.panel.active'),idx=ids.indexOf(active?.id);if(idx<0)return;let next=idx+(dx<0?1:-1);if(next>=0&&next<ids.length)showTab(ids[next],document.querySelectorAll('.tabs .tab')[next])},{passive:true});
+// viewport と touch-action: manipulation でダブルタップ拡大を抑止
+function dishEl(r,d,t,i){
+ let el=document.createElement('div');el.className='dish';
+ let star=document.createElement('button');star.className='iconbtn star';star.textContent=favs.some(f=>f.name===r.name)?'⭐':'☆';star.title='お気に入り';star.onclick=()=>toggleFav(r);el.append(star);
+ let name=document.createElement('span');name.className='dishname';name.textContent=r.name;name.title='タップしてレシピを表示';name.onclick=()=>{let old=el.nextElementSibling;if(old&&old.classList.contains('recipe')){old.remove();return}let box=document.createElement('div');box.className='recipe';let h=document.createElement('b');h.textContent='材料';box.append(h);let ul=document.createElement('ul');r.ing.forEach(a=>{let li=document.createElement('li');li.textContent=a[0]+'：'+amount(a[1],a[2]);ul.append(li)});box.append(ul);let hh=document.createElement('b');hh.textContent='作り方';box.append(hh);let ol=document.createElement('ol');r.steps.forEach(s=>{let li=document.createElement('li');li.textContent=s;ol.append(li)});box.append(ol);el.after(box)};
+ el.append(name);
+ let kur=document.createElement('button');kur.className='iconbtn';kur.textContent='クラシル';kur.onclick=()=>openKurashiru(r.name);el.append(kur);
+ let ch=document.createElement('button');ch.className='iconbtn';ch.textContent='変更';ch.onclick=()=>changeDish(d,t,i);el.append(ch);return el
+}
+function renderMenu(){let el=document.getElementById('menu');el.innerHTML='';for(let d=1;d<=+document.getElementById('days').value;d++){let ms=meals.filter(m=>m.day===d);if(!ms.length)continue;let box=document.createElement('div');box.className='day';let title=document.createElement('div');title.className='daytitle';title.textContent=d+'日目';box.append(title);ms.forEach(m=>{let row=document.createElement('div');row.className='meal';let typ=document.createElement('div');typ.className='mealtype';typ.textContent=m.type==='lunch'?'昼':'夜';row.append(typ);m.parts.forEach((r,i)=>{let label=document.createElement('div');label.className='muted';label.textContent=m.type==='dinner'?(['主菜','副菜','汁物'][i]||'料理'):'メニュー';row.append(label,dishEl(r,d,m.type,i))});box.append(row)});el.append(box)}}
+const recentBySlot=new Map();
+function changeDish(day,type,index){
+ let m=meals.find(x=>x.day===day&&x.type===type);if(!m)return;
+ const old=m.parts[index],ex=document.getElementById('exclude').value.split(/[、,，]/).map(x=>x.trim()).filter(Boolean),style=document.getElementById('style').value;
+ const base=index===0?(type==='lunch'?lunches:mains):index===1?sides:soups;
+ const slotKey=day+'-'+type+'-'+index;
+ let recent=recentBySlot.get(slotKey)||[];
+ const usedNames=new Set();
+ meals.forEach(x=>x.parts.forEach((r,j)=>{if(x===m&&j===index)return;if(index===0&&j===0&&x.type===type)usedNames.add(r.name);if(index===1&&j===1&&x.type==='dinner')usedNames.add(r.name);if(index===2&&j===2&&x.type==='dinner')usedNames.add(r.name)}));
+ const styleOK=r=>(style==='all'||(style==='quick'&&r.quick)||r.type===style);
+ const overlap=r=>r.ing.reduce((n,a)=>n+old.ing.filter(b=>norm(b[0])===norm(a[0])).length,0);
+ // 条件を段階的に緩める。候補が少ない時は「未使用」「傾向」「食材一致」を優先しすぎない。
+ let candidates=base.filter(r=>r.name!==old.name&&!excluded(r,ex));
+ if(!candidates.length)candidates=base.filter(r=>r.name!==old.name);
+ let fresh=candidates.filter(r=>!recent.includes(r.name));
+ if(fresh.length>=3)candidates=fresh; else if(fresh.length)candidates=fresh;
+ let notBlocked=candidates.filter(r=>!blockedNames.has(r.name));
+ if(notBlocked.length>=3)candidates=notBlocked; else if(notBlocked.length)candidates=notBlocked;
+ let unused=candidates.filter(r=>!usedNames.has(r.name));
+ if(unused.length>=3)candidates=unused; else if(unused.length)candidates=unused;
+ // 食材一致を加点しつつ、最高一致だけに固定しない。候補の幅を残して毎回違う料理を出す。
+ let scored=candidates.map(r=>({r,score:overlap(r)*2+(styleOK(r)?1:0)+(usedNames.has(r.name)?-1:0)}));
+ let max=Math.max(...scored.map(x=>x.score)), pool=scored.filter(x=>x.score>=max-2);
+ let replacement=pool[Math.floor(Math.random()*pool.length)]?.r;
+ if(!replacement){alert('変更候補が見つからなかったよ。');return;}
+ recent.push(old.name,replacement.name);recent=[...new Set(recent)].slice(-6);recentBySlot.set(slotKey,recent);
+ blockedNames.add(old.name);m.parts[index]=replacement;renderMenu();renderShopping();
+}
+function toggleFav(r){let i=favs.findIndex(x=>x.name===r.name);if(i>=0)favs.splice(i,1);else favs.push(r);localStorage.setItem('kondateFavsV2',JSON.stringify(favs));renderMenu();renderFavs()}
+function renderFavs(){let el=document.getElementById('favorites');el.innerHTML='';document.getElementById('count').textContent=favs.length+'件';if(!favs.length){el.innerHTML='<div class="empty">お気に入りはまだありません。</div>';return}favs.forEach(r=>{let box=document.createElement('div');box.className='fav';let h=document.createElement('b');h.textContent=r.name;let p=document.createElement('p');p.className='muted';p.textContent='材料：'+r.ing.map(x=>x[0]).join('、');let acts=document.createElement('div');acts.className='actions no-print';let add=document.createElement('button');add.className='secondary small';add.textContent='献立に追加';add.onclick=()=>addFav(r);let del=document.createElement('button');del.className='danger small';del.textContent='削除';del.onclick=()=>toggleFav(r);let kur=document.createElement('button');kur.className='secondary small';kur.textContent='クラシルで探す';kur.onclick=()=>openKurashiru(r.name);acts.append(add,kur,del);box.append(h,p,acts);el.append(box)})}
+function addFav(r){let slots=[];for(let d=1;d<=+document.getElementById('days').value;d++){if(document.getElementById('lunch').checked)slots.push({day:d,type:'lunch'});if(document.getElementById('dinner').checked)slots.push({day:d,type:'dinner'})}let s=slots.find(s=>!meals.some(m=>m.day===s.day&&m.type===s.type));if(s){if(s.type==='dinner'){let side=choose(sides,new Set()),soup=choose(soups,new Set());meals.push({day:s.day,type:s.type,parts:[r,side,soup]})}else meals.push({day:s.day,type:s.type,parts:[r]})}else{alert('追加できる空き枠がないよ');return}renderMenu();renderShopping();showTab('menuPanel',document.querySelector('.tab'));document.getElementById('menuPanel').scrollIntoView({behavior:'smooth'})}
+function renderShopping(){
+ let people=+document.getElementById('people').value,sums=new Map();
+ const condiments=['しょうゆ','醤油','みりん','砂糖','塩','こしょう','味噌','めんつゆ','鶏ガラスープの素','コンソメ','カレールウ','シチュールウ','麻婆豆腐の素','回鍋肉の素','焼きそばソース','ケチャップ','ウスターソース','オイスターソース','焼肉のたれ','ドレッシング','ごまドレッシング','マヨネーズ','ごま油','オリーブ油','酢','レモン汁','カレー粉','塩昆布','かつお節','パン粉','小麦粉','カットトマト缶'];
+ meals.forEach(m=>m.parts.forEach(r=>r.ing.forEach(([raw,q,u])=>{
+   let n=norm(raw),qty=+q*people/4,unit=u;
+   if(n==='トマト缶')n='カットトマト缶';
+   // 大さじ・小さじ・カップをmL換算して、同じ調味料は一行にまとめる
+   if(['大さじ','小さじ','カップ'].includes(unit)){
+     qty*=unit==='大さじ'?15:unit==='小さじ'?5:200;unit='spoonml';
+   }
+   if(n==='カットトマト缶'&&unit!=='ml'){unit='g';}
+   const key=n+'|'+unit;
+   if(!sums.has(key))sums.set(key,{name:n,unit,qty});else sums.get(key).qty+=qty;
+ })));
+ let arr=[...sums.values()].sort((a,b)=>a.name.localeCompare(b.name,'ja')),el=document.getElementById('shopping');el.innerHTML='';
+ if(!arr.length){el.textContent='献立を作ると食材がまとまります。';return}
+ const groups={
+ '肉・魚':x=>/肉|鶏|豚|牛|鮭|さば|タラ|ぶり|ひき肉/.test(x),
+ '野菜・きのこ':x=>/キャベツ|玉ねぎ|にんじん|白菜|しめじ|じゃがいも|ピーマン|ブロッコリー|トマト|レタス|きゅうり|大根|ほうれん草|小松菜|ねぎ|しょうが|にんにく|もやし|れんこん|ごぼう|かぼちゃ|豆苗|パプリカ/.test(x),
+ '豆腐・卵・乳製品':x=>/卵|豆腐|牛乳|バター|チーズ|厚揚げ|油揚げ|ヨーグルト/.test(x),
+ '主食・加工品':x=>/ごはん|パスタ|うどん|麺|食パン|しらたき|カットトマト缶|春雨|ツナ缶|キムチ|コーン|カレールウ|シチュールウ|麻婆豆腐の素|回鍋肉の素/.test(x),
+ '調味料':x=>condiments.some(k=>x.includes(k))
+ };
+ let done=new Set();
+ for(let [g,match] of Object.entries(groups)){
+   let items=arr.filter(x=>!done.has(x.name+'|'+x.unit)&&match(x.name));if(!items.length)continue;
+   items.forEach(x=>done.add(x.name+'|'+x.unit));let h=document.createElement('div');h.style.cssText='font-weight:800;background:#f2f6f2;padding:7px 9px;border-radius:8px;margin-top:8px';h.textContent=g;el.append(h);items.forEach(x=>el.append(makeItem(x)));
+ }
+ arr.filter(x=>!done.has(x.name+'|'+x.unit)).forEach(x=>el.append(makeItem(x)));
+}
+function shoppingAmount(q,u){q=Math.round(q*10)/10;if(u==='spoonml'){let ml=q;if(ml>=200){let cup=Math.floor(ml/200);ml-=cup*200;let parts=[cup?cup+'カップ':''];if(ml>=15){let tbsp=Math.floor(ml/15);ml-=tbsp*15;if(tbsp)parts.push('大さじ'+tbsp)}if(ml>=5){let tsp=Math.floor(ml/5);ml-=tsp*5;if(tsp)parts.push('小さじ'+tsp)}if(ml>0)parts.push(ml+'ml');return parts.filter(Boolean).join(' ')}let parts=[];if(ml>=15){let tbsp=Math.floor(ml/15);ml-=tbsp*15;if(tbsp)parts.push('大さじ'+tbsp)}if(ml>=5){let tsp=Math.floor(ml/5);ml-=tsp*5;if(tsp)parts.push('小さじ'+tsp)}if(ml>0)parts.push(ml+'ml');return parts.join(' ')||'0ml'}return q+u}
+function makeItem(x){let row=document.createElement('label');row.className='item';let cb=document.createElement('input');cb.type='checkbox';cb.onchange=()=>row.classList.toggle('done',cb.checked);let n=document.createElement('span');n.textContent=x.name;let a=document.createElement('span');a.className='amt';a.textContent=shoppingAmount(x.qty,x.unit);row.append(cb,n,a);return row}
+async function copyList(){let txt='買い物リスト\\n'+[...document.querySelectorAll('.item')].map(r=>(r.querySelector('input').checked?'[購入済] ':'[ ] ')+r.querySelector('span').textContent+' '+r.querySelector('.amt').textContent).join('\\n');try{await navigator.clipboard.writeText(txt)}catch(e){let t=document.createElement('textarea');t.value=txt;document.body.append(t);t.select();document.execCommand('copy');t.remove()}document.getElementById('status').textContent='買い物リストをコピーしました。'}
+renderFavs();
+// 初期表示は献立タブ
+showTab('menuPanel',document.querySelector('.tabs .tab'))
+</script></body></html>
